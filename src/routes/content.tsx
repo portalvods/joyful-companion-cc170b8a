@@ -1,16 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Download, DownloadCloud, Film, Tv, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Download, DownloadCloud, Film, Tv, RefreshCw, Trash2, X, Search,
+  Play, AlertCircle, CheckCircle2, Clock, Loader2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { TopBar } from "@/components/top-bar";
-import { mockContent, movieCategoriesList, seriesCategoriesList, type ContentItem, type ContentStatus, type ContentKind } from "@/lib/mock-data";
+import { api, connectWS, isConfigured } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/content")({
@@ -23,42 +29,85 @@ export const Route = createFileRoute("/content")({
   component: ContentPage,
 });
 
-const statusLabel: Record<ContentStatus, string> = {
-  queued: "Na Lista", downloading: "Baixando", completed: "Concluído", failed: "Falhou",
+type Kind = "movie" | "series";
+type Status = "queued" | "pending" | "downloading" | "completed" | "failed";
+
+type Item = {
+  id: number;
+  external_id?: string;
+  title: string;
+  kind: Kind;
+  category: string | null;
+  url: string;
+  size_bytes: number;
+  downloaded_bytes: number;
+  status: Status;
+  file_path: string | null;
+  error: string | null;
+  discovered_at: number;
+  updated_at: number;
 };
 
-function ContentPage() {
-  const [items, setItems] = useState<ContentItem[]>(mockContent);
-  const [tab, setTab] = useState<ContentKind>("movie");
+const statusLabel: Record<Status, string> = {
+  queued: "Na fila",
+  pending: "Pendente",
+  downloading: "Baixando",
+  completed: "Concluído",
+  failed: "Falhou",
+};
 
-  // Simulate download progress
-  useEffect(() => {
-    const id = setInterval(() => {
-      setItems((prev) => prev.map((it) => {
-        if (it.status !== "downloading") return it;
-        const p = Math.min(100, it.progress + Math.random() * 6);
-        if (p >= 100) return { ...it, progress: 100, status: "completed" };
-        return { ...it, progress: p };
-      }));
-    }, 900);
-    return () => clearInterval(id);
-  }, []);
+const statusIcon: Record<Status, React.ComponentType<{ className?: string }>> = {
+  queued: Clock,
+  pending: Clock,
+  downloading: Loader2,
+  completed: CheckCircle2,
+  failed: AlertCircle,
+};
+
+function fmtSize(bytes: number) {
+  if (!bytes || bytes <= 0) return "—";
+  const gb = bytes / 1e9;
+  if (gb >= 1) return `${gb.toFixed(2)} GB`;
+  const mb = bytes / 1e6;
+  return `${mb.toFixed(0)} MB`;
+}
+
+function ContentPage() {
+  const connected = isConfigured();
+  const [tab, setTab] = useState<Kind>("movie");
+
+  if (!connected) {
+    return (
+      <>
+        <TopBar title="Conteúdo" subtitle="Filmes e séries detectados na lista M3U" />
+        <div className="p-6">
+          <Card>
+            <CardContent className="p-10 text-center space-y-2">
+              <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground" />
+              <div className="text-sm font-medium">Backend não conectado</div>
+              <p className="text-xs text-muted-foreground">Configure a API URL na tela de login para ver o conteúdo real.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <TopBar title="Conteúdo" subtitle="Filmes e séries detectados na lista M3U" />
       <div className="p-6">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as ContentKind)}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
           <TabsList>
             <TabsTrigger value="movie"><Film className="h-4 w-4 mr-2" /> Filmes</TabsTrigger>
             <TabsTrigger value="series"><Tv className="h-4 w-4 mr-2" /> Séries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="movie" className="mt-4">
-            <ContentList kind="movie" items={items} setItems={setItems} categories={movieCategoriesList} />
+            <ContentList kind="movie" />
           </TabsContent>
           <TabsContent value="series" className="mt-4">
-            <ContentList kind="series" items={items} setItems={setItems} categories={seriesCategoriesList} />
+            <ContentList kind="series" />
           </TabsContent>
         </Tabs>
       </div>
@@ -66,61 +115,139 @@ function ContentPage() {
   );
 }
 
-function ContentList({
-  kind, items, setItems, categories,
-}: {
-  kind: ContentKind;
-  items: ContentItem[];
-  setItems: React.Dispatch<React.SetStateAction<ContentItem[]>>;
-  categories: string[];
-}) {
+function ContentList({ kind }: { kind: Kind }) {
+  const [items, setItems] = useState<Item[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState("Todas");
-  const [status, setStatus] = useState<ContentStatus | "all">("all");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [status, setStatus] = useState<Status | "all">("all");
+  const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
+  const [limit, setLimit] = useState(200);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
 
-  const filtered = useMemo(() => items.filter((i) =>
-    i.kind === kind
-    && (category === "Todas" || i.category === category)
-    && (status === "all" || i.status === status)
-  ), [items, kind, category, status]);
+  // Debounce busca
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounced(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
 
-  const toggle = (id: string) => setSelected((s) => {
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: Record<string, string> = { kind, limit: String(limit) };
+      if (category !== "Todas") params.category = category;
+      if (status !== "all") params.status = status;
+      if (qDebounced) params.q = qDebounced;
+      const rows = await api.content(params);
+      setItems(rows as Item[]);
+    } catch (e: any) {
+      toast.error("Falha ao carregar conteúdo", { description: e.message });
+    } finally { setLoading(false); }
+  }, [kind, category, status, qDebounced, limit]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Categorias
+  useEffect(() => {
+    api.categories(kind)
+      .then((cs: string[]) => setCategories(["Todas", ...cs]))
+      .catch(() => setCategories(["Todas"]));
+  }, [kind]);
+
+  // Progresso ao vivo via WebSocket
+  useEffect(() => {
+    const stop = connectWS({
+      onContent: (upd: any) => {
+        setItems((prev) => prev.map((it) => it.id === upd.id ? { ...it, ...upd } : it));
+      },
+    });
+    return stop;
+  }, []);
+
+  const toggle = (id: number) => setSelected((s) => {
     const n = new Set(s);
-    n.has(id) ? n.delete(id) : n.add(id);
+    if (n.has(id)) n.delete(id); else n.add(id);
     return n;
   });
 
-  const allChecked = filtered.length > 0 && filtered.every((i) => selected.has(i.id));
+  const allChecked = items.length > 0 && items.every((i) => selected.has(i.id));
 
-  const startDownload = (ids: string[]) => {
-    setItems((prev) => prev.map((it) => ids.includes(it.id) && it.status !== "completed" && it.status !== "downloading"
-      ? { ...it, status: "downloading", progress: Math.max(1, it.progress) }
-      : it));
+  const doDownload = async (ids: number[]) => {
+    if (!ids.length) return;
+    setBusy(true);
+    try {
+      const r = await api.download(ids);
+      toast.success(`${r.queued ?? ids.length} item(ns) na fila`);
+      setSelected(new Set());
+      await load();
+    } catch (e: any) {
+      toast.error("Falha ao enfileirar", { description: e.message });
+    } finally { setBusy(false); }
   };
 
-  const stats = useMemo(() => {
-    const k = items.filter((i) => i.kind === kind);
-    return {
-      total: k.length,
-      completed: k.filter((i) => i.status === "completed").length,
-      downloading: k.filter((i) => i.status === "downloading").length,
-      failed: k.filter((i) => i.status === "failed").length,
-    };
-  }, [items, kind]);
+  const doDownloadAll = async () => {
+    setBusy(true);
+    try {
+      const filters: Record<string, unknown> = { kind };
+      if (category !== "Todas") filters.category = category;
+      if (status !== "all") filters.status = status;
+      const r = await api.downloadAll(filters);
+      toast.success(`${r.queued ?? 0} item(ns) enfileirados (todos os filtrados)`);
+      await load();
+    } catch (e: any) {
+      toast.error("Falha ao enfileirar em lote", { description: e.message });
+    } finally { setBusy(false); }
+  };
+
+  const doCancel = async (id: number) => {
+    try { await api.cancel(id); toast("Download cancelado"); await load(); }
+    catch (e: any) { toast.error("Falha ao cancelar", { description: e.message }); }
+  };
+
+  const doRemove = async (id: number) => {
+    if (!confirm("Remover este item e apagar o arquivo baixado (se houver)?")) return;
+    try { await api.remove(id); toast("Item removido"); setItems((p) => p.filter((x) => x.id !== id)); }
+    catch (e: any) { toast.error("Falha ao remover", { description: e.message }); }
+  };
+
+  const stats = useMemo(() => ({
+    total: items.length,
+    completed: items.filter((i) => i.status === "completed").length,
+    downloading: items.filter((i) => i.status === "downloading").length,
+    queued: items.filter((i) => i.status === "queued" || i.status === "pending").length,
+    failed: items.filter((i) => i.status === "failed").length,
+  }), [items]);
+
+  const selectedArr = useMemo(() => [...selected], [selected]);
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-4">
+      {/* Stats */}
+      <div className="grid gap-3 md:grid-cols-5">
         <StatBox label="Total" value={stats.total} />
         <StatBox label="Concluídos" value={stats.completed} tone="success" />
         <StatBox label="Baixando" value={stats.downloading} tone="chart-3" />
+        <StatBox label="Na fila" value={stats.queued} tone="chart-1" />
         <StatBox label="Falhas" value={stats.failed} tone="destructive" />
       </div>
 
+      {/* Toolbar */}
       <Card>
         <CardContent className="p-4 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar título..."
+              className="pl-8"
+            />
+          </div>
+
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectTrigger className="w-52"><SelectValue placeholder="Categoria" /></SelectTrigger>
             <SelectContent>
               {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
@@ -130,112 +257,159 @@ function ContentList({
             <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="queued">Na Lista</SelectItem>
+              <SelectItem value="queued">Na fila</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="downloading">Baixando</SelectItem>
               <SelectItem value="completed">Concluído</SelectItem>
               <SelectItem value="failed">Falhou</SelectItem>
             </SelectContent>
           </Select>
 
-          <div className="flex-1" />
+          <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
+            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[100, 200, 500, 1000, 5000].map((n) => (
+                <SelectItem key={n} value={String(n)}>{n} itens</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <Button
-            variant="secondary"
-            disabled={selected.size === 0}
-            onClick={() => {
-              startDownload([...selected]);
-              toast.success(`${selected.size} item(ns) na fila de download`);
-              setSelected(new Set());
-            }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Baixar selecionados ({selected.size})
+          <Button variant="ghost" size="icon" onClick={load} disabled={loading} title="Recarregar">
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </Button>
-          <Button onClick={() => {
-            const ids = filtered.map((i) => i.id);
-            startDownload(ids);
-            toast.success(`${ids.length} item(ns) enviados para a fila`);
-          }}>
-            <DownloadCloud className="h-4 w-4 mr-2" />
-            Baixar tudo
-          </Button>
+
+          <div className="w-full flex flex-wrap gap-2 pt-1">
+            <Button
+              variant="secondary"
+              disabled={selected.size === 0 || busy}
+              onClick={() => doDownload(selectedArr)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Baixar selecionados ({selected.size})
+            </Button>
+            <Button onClick={doDownloadAll} disabled={busy || items.length === 0}>
+              <DownloadCloud className="h-4 w-4 mr-2" />
+              Baixar tudo (filtrado)
+            </Button>
+            <div className="flex-1" />
+            {selected.size > 0 && (
+              <Button variant="ghost" onClick={() => setSelected(new Set())}>
+                <X className="h-4 w-4 mr-2" /> Limpar seleção
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
+      {/* Lista */}
       <Card>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[40px_1fr_140px_100px_100px_160px_60px] gap-3 px-4 py-2.5 border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+          <div className="grid grid-cols-[40px_1fr_180px_110px_200px_90px] gap-3 px-4 py-2.5 border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
             <Checkbox
               checked={allChecked}
               onCheckedChange={(v) => {
                 const s = new Set(selected);
-                if (v) filtered.forEach((i) => s.add(i.id));
-                else filtered.forEach((i) => s.delete(i.id));
+                if (v) items.forEach((i) => s.add(i.id));
+                else items.forEach((i) => s.delete(i.id));
                 setSelected(s);
               }}
             />
             <span>Título</span>
             <span>Categoria</span>
             <span>Tamanho</span>
-            <span>Ano</span>
-            <span>Status / Progresso</span>
-            <span></span>
+            <span>Status</span>
+            <span className="text-right">Ações</span>
           </div>
-          <div className="divide-y divide-border max-h-[520px] overflow-auto">
-            {filtered.length === 0 && (
-              <div className="p-10 text-center text-sm text-muted-foreground">Nenhum item corresponde aos filtros.</div>
+
+          <div className="divide-y divide-border max-h-[640px] overflow-auto">
+            {loading && items.length === 0 && (
+              <div className="p-10 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
             )}
-            {filtered.map((it) => (
-              <div key={it.id} className="grid grid-cols-[40px_1fr_140px_100px_100px_160px_60px] gap-3 px-4 py-3 items-center hover:bg-muted/40">
-                <Checkbox checked={selected.has(it.id)} onCheckedChange={() => toggle(it.id)} />
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{it.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {it.kind === "movie" ? "Filme" : "Série"} · id {it.id}
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">{it.category}</span>
-                <span className="text-xs">{(it.sizeMB / 1024).toFixed(2)} GB</span>
-                <span className="text-xs text-muted-foreground">{it.year ?? "—"}</span>
-                <div>
-                  {it.status === "downloading" ? (
-                    <div className="space-y-1">
-                      <Progress value={it.progress} />
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>{it.progress.toFixed(0)}%</span>
-                        <span>{((it.sizeMB * it.progress) / 100 / 1024).toFixed(2)} / {(it.sizeMB / 1024).toFixed(2)} GB</span>
-                      </div>
+            {!loading && items.length === 0 && (
+              <div className="p-10 text-center text-sm text-muted-foreground">
+                Nenhum item. Rode uma sincronização em <b>Fonte M3U</b>.
+              </div>
+            )}
+            {items.map((it) => {
+              const pct = it.size_bytes > 0
+                ? Math.min(100, (it.downloaded_bytes / it.size_bytes) * 100)
+                : (it.status === "completed" ? 100 : 0);
+              const StatusIcon = statusIcon[it.status];
+              return (
+                <div key={it.id} className="grid grid-cols-[40px_1fr_180px_110px_200px_90px] gap-3 px-4 py-3 items-center hover:bg-muted/40">
+                  <Checkbox checked={selected.has(it.id)} onCheckedChange={() => toggle(it.id)} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{it.title}</div>
+                    <div className="text-xs text-muted-foreground truncate" title={it.url}>
+                      {it.kind === "movie" ? "Filme" : "Série"} · #{it.id}
+                      {it.error && <span className="text-destructive"> · {it.error.slice(0, 60)}</span>}
                     </div>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        it.status === "completed" && "bg-success/20 text-success",
-                        it.status === "failed" && "bg-destructive/20 text-destructive",
-                        it.status === "queued" && "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {statusLabel[it.status]}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex justify-end">
-                  {it.status === "failed" ? (
-                    <Button variant="ghost" size="icon" onClick={() => { startDownload([it.id]); toast("Retentando..."); }}>
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      setItems((p) => p.filter((x) => x.id !== it.id));
-                      toast("Item removido");
-                    }}>
+                  </div>
+                  <span className="text-xs text-muted-foreground truncate">{it.category ?? "—"}</span>
+                  <span className="text-xs">
+                    {fmtSize(it.size_bytes)}
+                    {it.status === "downloading" && it.downloaded_bytes > 0 && (
+                      <div className="text-[10px] text-muted-foreground">
+                        {fmtSize(it.downloaded_bytes)} baixado
+                      </div>
+                    )}
+                  </span>
+                  <div>
+                    {it.status === "downloading" ? (
+                      <div className="space-y-1">
+                        <Progress value={pct} />
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" /> {pct.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "gap-1",
+                          it.status === "completed" && "bg-success/20 text-success",
+                          it.status === "failed" && "bg-destructive/20 text-destructive",
+                          (it.status === "queued" || it.status === "pending") && "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        <StatusIcon className="h-3 w-3" />
+                        {statusLabel[it.status]}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-1">
+                    {it.status === "downloading" && (
+                      <Button variant="ghost" size="icon" title="Cancelar" onClick={() => doCancel(it.id)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {(it.status === "failed" || it.status === "queued" || it.status === "pending") && (
+                      <Button variant="ghost" size="icon" title="Baixar" onClick={() => doDownload([it.id])}>
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {it.status === "failed" && (
+                      <Button variant="ghost" size="icon" title="Retentar" onClick={() => doDownload([it.id])}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" title="Remover" onClick={() => doRemove(it.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+          {items.length >= limit && (
+            <div className="p-3 text-center text-xs text-muted-foreground border-t border-border">
+              Exibindo {items.length} itens (limite atual). Aumente o limite acima para ver mais.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
