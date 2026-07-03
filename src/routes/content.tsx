@@ -305,7 +305,7 @@ function ContentList({ kind }: { kind: Kind }) {
       {/* Lista */}
       <Card>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[40px_1fr_180px_110px_200px_90px] gap-3 px-4 py-2.5 border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+          <div className="grid grid-cols-[40px_64px_1fr_180px_110px_200px_90px] gap-3 px-4 py-2.5 border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
             <Checkbox
               checked={allChecked}
               onCheckedChange={(v) => {
@@ -315,6 +315,7 @@ function ContentList({ kind }: { kind: Kind }) {
                 setSelected(s);
               }}
             />
+            <span>Capa</span>
             <span>Título</span>
             <span>Categoria</span>
             <span>Tamanho</span>
@@ -339,10 +340,23 @@ function ContentList({ kind }: { kind: Kind }) {
                 : (it.status === "completed" ? 100 : 0);
               const StatusIcon = statusIcon[it.status];
               return (
-                <div key={it.id} className="grid grid-cols-[40px_1fr_180px_110px_200px_90px] gap-3 px-4 py-3 items-center hover:bg-muted/40">
+                <div key={it.id} className="grid grid-cols-[40px_64px_1fr_180px_110px_200px_90px] gap-3 px-4 py-3 items-center hover:bg-muted/40">
                   <Checkbox checked={selected.has(it.id)} onCheckedChange={() => toggle(it.id)} />
+                  <div className="h-16 w-12 rounded overflow-hidden bg-muted flex items-center justify-center">
+                    {it.poster_url ? (
+                      <img
+                        src={it.poster_url}
+                        alt={it.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      (it.kind === "movie" ? <Film className="h-5 w-5 text-muted-foreground" /> : <Tv className="h-5 w-5 text-muted-foreground" />)
+                    )}
+                  </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{it.title}</div>
+                    <div className="text-sm font-medium truncate" title={it.title}>{it.title}</div>
                     <div className="text-xs text-muted-foreground truncate" title={it.url}>
                       {it.kind === "movie" ? "Filme" : "Série"} · #{it.id}
                       {it.error && <span className="text-destructive"> · {it.error.slice(0, 60)}</span>}
