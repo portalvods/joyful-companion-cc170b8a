@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SourceRouteImport } from './routes/source'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContentRouteImport } from './routes/content'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const SyncRoute = SyncRouteImport.update({
 const SourceRoute = SourceRouteImport.update({
   id: '/source',
   path: '/source',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContentRoute = ContentRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/content': typeof ContentRoute
+  '/login': typeof LoginRoute
   '/source': typeof SourceRoute
   '/sync': typeof SyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/content': typeof ContentRoute
+  '/login': typeof LoginRoute
   '/source': typeof SourceRoute
   '/sync': typeof SyncRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/content': typeof ContentRoute
+  '/login': typeof LoginRoute
   '/source': typeof SourceRoute
   '/sync': typeof SyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/content' | '/source' | '/sync'
+  fullPaths: '/' | '/content' | '/login' | '/source' | '/sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/content' | '/source' | '/sync'
-  id: '__root__' | '/' | '/content' | '/source' | '/sync'
+  to: '/' | '/content' | '/login' | '/source' | '/sync'
+  id: '__root__' | '/' | '/content' | '/login' | '/source' | '/sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContentRoute: typeof ContentRoute
+  LoginRoute: typeof LoginRoute
   SourceRoute: typeof SourceRoute
   SyncRoute: typeof SyncRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/source'
       fullPath: '/source'
       preLoaderRoute: typeof SourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/content': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContentRoute: ContentRoute,
+  LoginRoute: LoginRoute,
   SourceRoute: SourceRoute,
   SyncRoute: SyncRoute,
 }

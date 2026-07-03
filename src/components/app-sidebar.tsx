@@ -1,6 +1,8 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Activity, Database, Download, Radio, Waypoints } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Activity, Database, Download, LogOut, Radio, Waypoints } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clearAuth, isConfigured } from "@/lib/api";
+import { toast } from "sonner";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Activity },
@@ -11,6 +13,8 @@ const nav = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const connected = isConfigured();
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 px-5 border-b border-sidebar-border">
@@ -42,12 +46,23 @@ export function AppSidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-sidebar-border text-xs text-muted-foreground">
+      <div className="p-4 border-t border-sidebar-border text-xs text-muted-foreground space-y-2">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-          Serviço ativo
+          <span className={cn("h-2 w-2 rounded-full", connected ? "bg-success animate-pulse" : "bg-muted-foreground")} />
+          {connected ? "Backend conectado" : "Modo demo (mock)"}
         </div>
-        <div className="mt-1">v1.0.0 · edge worker</div>
+        {connected ? (
+          <button
+            onClick={() => { clearAuth(); toast("Desconectado"); navigate({ to: "/login" }); }}
+            className="flex items-center gap-2 hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-3 w-3" /> Sair
+          </button>
+        ) : (
+          <Link to="/login" className="flex items-center gap-2 hover:text-foreground transition-colors">
+            <LogOut className="h-3 w-3 rotate-180" /> Conectar backend
+          </Link>
+        )}
       </div>
     </aside>
   );

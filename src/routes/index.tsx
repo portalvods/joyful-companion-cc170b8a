@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { TopBar } from "@/components/top-bar";
 import { initialLogs } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { api, connectWS, isConfigured } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,39 +39,66 @@ function seed(): Point[] {
 }
 
 function Dashboard() {
+  const connected = isConfigured();
   const [data, setData] = useState<Point[]>(seed);
   const [running, setRunning] = useState(true);
-  const [logs, setLogs] = useState(initialLogs);
+  const [logs, setLogs] = useState<any[]>(initialLogs);
+  const [disk, setDisk] = useState({ used: 4.2, total: 8.0, free: 3.8 });
+  const [cpuCores, setCpuCores] = useState<number | null>(null);
+  const [ramInfo, setRamInfo] = useState<{ used: number; total: number } | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setData((d) => {
-        const next = [...d.slice(1), {
-          t: "now",
-          cpu: Math.max(5, Math.min(95, d[d.length - 1].cpu + (Math.random() - 0.5) * 12)),
-          ram: Math.max(20, Math.min(95, d[d.length - 1].ram + (Math.random() - 0.5) * 8)),
-          net: Math.max(0.5, Math.min(50, d[d.length - 1].net + (Math.random() - 0.5) * 6)),
-        }];
-        return next;
+    if (connected) {
+      // Real: WS metrics + poll logs
+      const stop = connectWS({
+        onMetrics: (m) => {
+          setCpuCores(m.cpu?.cores ?? null);
+          setRamInfo({ used: m.ram?.used_gb ?? 0, total: m.ram?.total_gb ?? 0 });
+          setDisk({ used: m.disk?.used_tb ?? 0, total: m.disk?.total_tb ?? 0, free: m.disk?.free_tb ?? 0 });
+          setData((d) => [...d.slice(1), {
+            t: "now",
+            cpu: m.cpu?.pct ?? 0,
+            ram: m.ram?.pct ?? 0,
+            net: m.net_mbs ?? 0,
+          }]);
+        },
       });
+      const loadLogs = () => api.logs()
+        .then((rows: any[]) => setLogs(rows.slice(0, 8).map((r) => ({
+          t: new Date(r.ts).toLocaleTimeString(),
+          msg: r.message,
+          level: r.level === "success" ? "success" : r.level === "error" ? "error" : r.level === "warn" ? "warn" : "info",
+        }))))
+        .catch(() => {});
+      loadLogs();
+      const t = setInterval(loadLogs, 10000);
+      return () => { stop(); clearInterval(t); };
+    }
+    // Mock
+    const id = setInterval(() => {
+      setData((d) => [...d.slice(1), {
+        t: "now",
+        cpu: Math.max(5, Math.min(95, d[d.length - 1].cpu + (Math.random() - 0.5) * 12)),
+        ram: Math.max(20, Math.min(95, d[d.length - 1].ram + (Math.random() - 0.5) * 8)),
+        net: Math.max(0.5, Math.min(50, d[d.length - 1].net + (Math.random() - 0.5) * 6)),
+      }]);
     }, 1500);
     return () => clearInterval(id);
-  }, []);
+  }, [connected]);
 
   const cur = data[data.length - 1];
-  const diskUsed = 4.2;
-  const diskTotal = 8.0;
-  const diskPct = (diskUsed / diskTotal) * 100;
+  const diskPct = disk.total ? (disk.used / disk.total) * 100 : 0;
 
   return (
     <>
       <TopBar title="Dashboard" subtitle="Monitoramento de recursos e serviços em tempo real" />
       <div className="p-6 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={Cpu} label="CPU" value={`${cur.cpu.toFixed(1)}%`} sub="8 núcleos · 3.6 GHz" tone="chart-1" />
-          <StatCard icon={MemoryStick} label="Memória RAM" value={`${cur.ram.toFixed(1)}%`} sub="10.4 / 16 GB" tone="chart-3" />
-          <StatCard icon={HardDrive} label="Disco" value={`${diskPct.toFixed(0)}%`} sub={`${diskUsed} TB de ${diskTotal} TB`} tone="chart-4" />
-          <StatCard icon={Zap} label="Download atual" value={`${cur.net.toFixed(1)} MB/s`} sub="3 downloads ativos" tone="chart-2" />
+          <StatCard icon={Cpu} label="CPU" value={`${cur.cpu.toFixed(1)}%`} sub={cpuCores ? `${cpuCores} núcleos` : "8 núcleos · 3.6 GHz"} tone="chart-1" />
+          <StatCard icon={MemoryStick} label="Memória RAM" value={`${cur.ram.toFixed(1)}%`} sub={ramInfo ? `${ramInfo.used} / ${ramInfo.total} GB` : "10.4 / 16 GB"} tone="chart-3" />
+          <StatCard icon={HardDrive} label="Disco" value={`${diskPct.toFixed(0)}%`} sub={`${disk.used} TB de ${disk.total} TB`} tone="chart-4" />
+          <StatCard icon={Zap} label="Download atual" value={`${cur.net.toFixed(1)} MB/s`} sub={connected ? "ao vivo" : "3 downloads ativos"} tone="chart-2" />
+
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -135,10 +163,11 @@ function Dashboard() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-muted-foreground">Espaço em disco</span>
-                  <span>{diskUsed} / {diskTotal} TB</span>
+                  <span>{disk.used} / {disk.total} TB</span>
                 </div>
                 <Progress value={diskPct} />
-                <div className="text-xs text-muted-foreground mt-1">{(diskTotal - diskUsed).toFixed(1)} TB disponíveis</div>
+                <div className="text-xs text-muted-foreground mt-1">{disk.free.toFixed(1)} TB disponíveis</div>
+
               </div>
 
               <div className="rounded-md border border-border bg-muted/40 p-3">

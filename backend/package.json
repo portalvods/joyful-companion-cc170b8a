@@ -1,0 +1,23 @@
+{
+  "name": "m3u-sync-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend do painel M3U Sync — parser, fila de downloads, métricas, streaming.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
+    "systeminformation": "^5.23.5",
+    "ws": "^8.18.0"
+  }
+}
