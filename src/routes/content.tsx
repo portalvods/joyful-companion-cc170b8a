@@ -39,6 +39,7 @@ type Item = {
   kind: Kind;
   category: string | null;
   url: string;
+  poster_url: string | null;
   size_bytes: number;
   downloaded_bytes: number;
   status: Status;
