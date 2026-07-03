@@ -94,10 +94,11 @@ function Dashboard() {
       <TopBar title="Dashboard" subtitle="Monitoramento de recursos e serviços em tempo real" />
       <div className="p-6 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={Cpu} label="CPU" value={`${cur.cpu.toFixed(1)}%`} sub="8 núcleos · 3.6 GHz" tone="chart-1" />
-          <StatCard icon={MemoryStick} label="Memória RAM" value={`${cur.ram.toFixed(1)}%`} sub="10.4 / 16 GB" tone="chart-3" />
-          <StatCard icon={HardDrive} label="Disco" value={`${diskPct.toFixed(0)}%`} sub={`${diskUsed} TB de ${diskTotal} TB`} tone="chart-4" />
-          <StatCard icon={Zap} label="Download atual" value={`${cur.net.toFixed(1)} MB/s`} sub="3 downloads ativos" tone="chart-2" />
+          <StatCard icon={Cpu} label="CPU" value={`${cur.cpu.toFixed(1)}%`} sub={cpuCores ? `${cpuCores} núcleos` : "8 núcleos · 3.6 GHz"} tone="chart-1" />
+          <StatCard icon={MemoryStick} label="Memória RAM" value={`${cur.ram.toFixed(1)}%`} sub={ramInfo ? `${ramInfo.used} / ${ramInfo.total} GB` : "10.4 / 16 GB"} tone="chart-3" />
+          <StatCard icon={HardDrive} label="Disco" value={`${diskPct.toFixed(0)}%`} sub={`${disk.used} TB de ${disk.total} TB`} tone="chart-4" />
+          <StatCard icon={Zap} label="Download atual" value={`${cur.net.toFixed(1)} MB/s`} sub={connected ? "ao vivo" : "3 downloads ativos"} tone="chart-2" />
+
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -162,10 +163,11 @@ function Dashboard() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-muted-foreground">Espaço em disco</span>
-                  <span>{diskUsed} / {diskTotal} TB</span>
+                  <span>{disk.used} / {disk.total} TB</span>
                 </div>
                 <Progress value={diskPct} />
-                <div className="text-xs text-muted-foreground mt-1">{(diskTotal - diskUsed).toFixed(1)} TB disponíveis</div>
+                <div className="text-xs text-muted-foreground mt-1">{disk.free.toFixed(1)} TB disponíveis</div>
+
               </div>
 
               <div className="rounded-md border border-border bg-muted/40 p-3">
