@@ -90,8 +90,11 @@ async function runSync() {
     const autoDl = getSetting("auto_download") === "1";
     const status = autoDl ? "queued" : "pending";
     const newIds = [];
+    let removed = 0;
     const tx = db.transaction(() => {
+      const seen = new Set();
       for (const it of items) {
+        seen.add(it.external_id);
         const ex = existing.get(it.external_id);
         if (ex) { upd.run(it.title, it.category, it.url, now, it.external_id); updated++; }
         else {
@@ -100,9 +103,19 @@ async function runSync() {
           if (autoDl) newIds.push(info.lastInsertRowid);
         }
       }
+      // Limpa itens que não estão mais na fonte e ainda não foram baixados
+      // (mantém 'completed' e 'downloading' pra não apagar arquivos do usuário)
+      const stale = db.prepare(
+        "SELECT id, external_id FROM content WHERE status IN ('queued','pending','failed')"
+      ).all();
+      const del = db.prepare("DELETE FROM content WHERE id=?");
+      for (const row of stale) {
+        if (!seen.has(row.external_id)) { del.run(row.id); removed++; }
+      }
     });
     tx();
     if (autoDl && newIds.length) enqueue(newIds);
+
     db.prepare("UPDATE sync_runs SET finished_at=?, added=?, updated=?, status='ok' WHERE id=?").run(Date.now(), added, updated, runId);
     log("success", `Sincronização OK: +${added} novos, ${updated} atualizados`);
     return { added, updated, total: items.length };
