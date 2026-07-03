@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS sync_runs (
 );
 `);
 
+// Migração leve: adiciona poster_url se ainda não existir
+try { db.exec("ALTER TABLE content ADD COLUMN poster_url TEXT"); } catch {}
+
 // Defaults
 const setDefault = (k, v) => {
   const row = db.prepare("SELECT value FROM settings WHERE key=?").get(k);

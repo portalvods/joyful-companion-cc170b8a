@@ -83,10 +83,10 @@ async function runSync() {
     const items = await fetchAndParseM3U(url);
     let added = 0, updated = 0;
     const now = Date.now();
-    const insert = db.prepare(`INSERT INTO content(external_id,title,kind,category,url,status,discovered_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?)`);
-    const existing = db.prepare("SELECT id FROM content WHERE external_id=?");
-    const upd = db.prepare("UPDATE content SET title=?,category=?,url=?,updated_at=? WHERE external_id=?");
+    const insert = db.prepare(`INSERT INTO content(external_id,title,kind,category,url,poster_url,status,discovered_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?)`);
+    const existing = db.prepare("SELECT id, kind FROM content WHERE external_id=?");
+    const upd = db.prepare("UPDATE content SET title=?,kind=?,category=?,url=?,poster_url=?,updated_at=? WHERE external_id=?");
     const autoDl = getSetting("auto_download") === "1";
     const status = autoDl ? "queued" : "pending";
     const newIds = [];
@@ -96,15 +96,15 @@ async function runSync() {
       for (const it of items) {
         seen.add(it.external_id);
         const ex = existing.get(it.external_id);
-        if (ex) { upd.run(it.title, it.category, it.url, now, it.external_id); updated++; }
+        if (ex) { upd.run(it.title, it.kind, it.category, it.url, it.poster_url ?? null, now, it.external_id); updated++; }
         else {
-          const info = insert.run(it.external_id, it.title, it.kind, it.category, it.url, status, now, now);
+          const info = insert.run(it.external_id, it.title, it.kind, it.category, it.url, it.poster_url ?? null, status, now, now);
           added++;
           if (autoDl) newIds.push(info.lastInsertRowid);
         }
       }
-      // Limpa itens que não estão mais na fonte e ainda não foram baixados
-      // (mantém 'completed' e 'downloading' pra não apagar arquivos do usuário)
+      // Remove itens que não estão mais na fonte VOD e ainda NÃO foram baixados.
+      // Mantém sempre 'completed' e 'downloading' pra não sumir com arquivos do usuário.
       const stale = db.prepare(
         "SELECT id, external_id FROM content WHERE status IN ('queued','pending','failed')"
       ).all();
