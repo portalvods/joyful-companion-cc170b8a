@@ -28,12 +28,9 @@ type Point = { t: string; cpu: number; ram: number; net: number };
 function seed(): Point[] {
   const arr: Point[] = [];
   for (let i = 30; i > 0; i--) {
-    arr.push({
-      t: `${i}s`,
-      cpu: 25 + Math.random() * 40,
-      ram: 45 + Math.random() * 25,
-      net: 3 + Math.random() * 15,
-    });
+    // Valores determinísticos para evitar hydration mismatch SSR/cliente.
+    // Os valores reais chegam pelo WS/mock após montar.
+    arr.push({ t: `${i}s`, cpu: 40, ram: 55, net: 8 });
   }
   return arr;
 }
@@ -41,6 +38,7 @@ function seed(): Point[] {
 function Dashboard() {
   const connected = isConfigured();
   const [data, setData] = useState<Point[]>(seed);
+
   const [running, setRunning] = useState(true);
   const [logs, setLogs] = useState<any[]>(initialLogs);
   const [disk, setDisk] = useState({ used: 4.2, total: 8.0, free: 3.8 });
