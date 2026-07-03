@@ -117,8 +117,9 @@ async function runSync() {
     if (autoDl && newIds.length) enqueue(newIds);
 
     db.prepare("UPDATE sync_runs SET finished_at=?, added=?, updated=?, status='ok' WHERE id=?").run(Date.now(), added, updated, runId);
-    log("success", `Sincronização OK: +${added} novos, ${updated} atualizados`);
-    return { added, updated, total: items.length };
+    log("success", `Sincronização OK: +${added} novos, ${updated} atualizados, -${removed} removidos`);
+    return { added, updated, removed, total: items.length };
+
   } catch (e) {
     db.prepare("UPDATE sync_runs SET finished_at=?, status='error', error=? WHERE id=?").run(Date.now(), String(e), runId);
     log("error", `Sync falhou: ${e.message}`);
