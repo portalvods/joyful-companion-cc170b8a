@@ -30,8 +30,8 @@ mkdir -p "$APP_HOME" "$DATA_DIR" "$MEDIA_DIR/movies" "$MEDIA_DIR/series"
 cp -r "$REPO_DIR/"* "$APP_HOME/"
 chown -R "$APP_USER":"$APP_USER" "$APP_HOME" "$DATA_DIR" "$MEDIA_DIR"
 
-echo "==> npm install"
-cd "$APP_HOME"
+echo "==> npm install (backend)"
+cd "$APP_HOME/backend"
 sudo -u "$APP_USER" npm install --omit=dev --no-audit --no-fund
 
 # Config .env
