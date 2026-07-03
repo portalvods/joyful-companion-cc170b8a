@@ -71,9 +71,9 @@ After=network.target
 [Service]
 Type=simple
 User=$APP_USER
-WorkingDirectory=$APP_HOME
+WorkingDirectory=$APP_HOME/backend
 EnvironmentFile=$APP_HOME/.env
-ExecStart=/usr/bin/node $APP_HOME/src/index.js
+ExecStart=/usr/bin/node $APP_HOME/backend/src/index.js
 Restart=always
 RestartSec=5
 StandardOutput=journal
