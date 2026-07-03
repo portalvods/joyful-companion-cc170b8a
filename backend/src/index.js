@@ -207,6 +207,19 @@ app.get("/media/*", (req, res) => {
   });
 });
 
+// ---- Frontend estático (SPA) ----
+// Serve o build do Vite em ../dist se existir, com fallback pro index.html.
+const FRONTEND_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../dist");
+if (fs.existsSync(FRONTEND_DIR)) {
+  app.use(express.static(FRONTEND_DIR));
+  app.get(/^\/(?!api|media|ws).*/, (_req, res) => {
+    res.sendFile(path.join(FRONTEND_DIR, "index.html"));
+  });
+  log("info", `Frontend estático: ${FRONTEND_DIR}`);
+}
+
+
+
 // ---- HTTP + WS ----
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
