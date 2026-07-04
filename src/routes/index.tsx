@@ -59,7 +59,7 @@ function FloatingNav() {
           </a>
         ))}
         <Link
-          to="/editor"
+          to="/app"
           className="ml-1 px-4 md:px-6 py-2 rounded-full bg-gold-gradient text-accent-foreground font-bold text-sm shadow-gold hover:brightness-110 transition"
         >
           Painel
@@ -130,7 +130,7 @@ function Hero() {
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
-            to="/editor"
+            to="/app"
             className="group flex items-center gap-2 px-8 py-4 rounded-full bg-gold-gradient text-accent-foreground font-bold shadow-gold hover:brightness-110 transition text-base"
           >
             Quero meu gerador
@@ -323,10 +323,10 @@ function Pricing() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <Link to="/editor" className="flex-1 py-4 rounded-full bg-gold-gradient text-accent-foreground font-bold text-center shadow-gold hover:brightness-110 transition">
+            <Link to="/app" className="flex-1 py-4 rounded-full bg-gold-gradient text-accent-foreground font-bold text-center shadow-gold hover:brightness-110 transition">
               Quero meu gerador
             </Link>
-            <Link to="/editor" className="flex-1 py-4 rounded-full border-2 border-border font-bold text-center hover:bg-white/5 transition">
+            <Link to="/app" className="flex-1 py-4 rounded-full border-2 border-border font-bold text-center hover:bg-white/5 transition">
               Teste Grátis
             </Link>
           </div>
@@ -520,7 +520,7 @@ function FinalCTA() {
           Junte-se a centenas de profissionais que já automatizaram a criação de banners e aumentaram suas vendas.
         </p>
         <Link
-          to="/editor"
+          to="/app"
           className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold-gradient text-accent-foreground font-bold shadow-gold hover:brightness-110 transition text-base"
         >
           Quero meu gerador <ArrowRight className="w-5 h-5" />
@@ -548,7 +548,7 @@ function Footer() {
         <div className="flex gap-4">
           <a href="#recursos" className="hover:text-foreground transition">Recursos</a>
           <a href="#precos" className="hover:text-foreground transition">Preços</a>
-          <Link to="/editor" className="hover:text-foreground transition">Painel</Link>
+          <Link to="/app" className="hover:text-foreground transition">Painel</Link>
         </div>
       </div>
     </footer>

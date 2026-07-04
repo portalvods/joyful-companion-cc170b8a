@@ -10,11 +10,35 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as EditorRouteImport } from './routes/editor'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWhatsappRouteImport } from './routes/app.whatsapp'
+import { Route as AppVideoDivulgacaoRouteImport } from './routes/app.video-divulgacao'
+import { Route as AppVideoRouteImport } from './routes/app.video'
+import { Route as AppUfcRouteImport } from './routes/app.ufc'
+import { Route as AppTodosEsportesRouteImport } from './routes/app.todos-esportes'
+import { Route as AppTelegramRouteImport } from './routes/app.telegram'
+import { Route as AppSeriesRouteImport } from './routes/app.series'
+import { Route as AppNbaRouteImport } from './routes/app.nba'
+import { Route as AppLogoRouteImport } from './routes/app.logo'
+import { Route as AppIndicacaoRouteImport } from './routes/app.indicacao'
+import { Route as AppGuiaFutebolRouteImport } from './routes/app.guia-futebol'
+import { Route as AppFutebolRouteImport } from './routes/app.futebol'
+import { Route as AppFilmesRouteImport } from './routes/app.filmes'
+import { Route as AppF1RouteImport } from './routes/app.f1'
+import { Route as AppExpressRouteImport } from './routes/app.express'
+import { Route as AppCreditosRouteImport } from './routes/app.creditos'
+import { Route as AppBolaoRouteImport } from './routes/app.bolao'
 
 const EditorRoute = EditorRouteImport.update({
   id: '/editor',
   path: '/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,30 +46,240 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWhatsappRoute = AppWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVideoDivulgacaoRoute = AppVideoDivulgacaoRouteImport.update({
+  id: '/video-divulgacao',
+  path: '/video-divulgacao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVideoRoute = AppVideoRouteImport.update({
+  id: '/video',
+  path: '/video',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUfcRoute = AppUfcRouteImport.update({
+  id: '/ufc',
+  path: '/ufc',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodosEsportesRoute = AppTodosEsportesRouteImport.update({
+  id: '/todos-esportes',
+  path: '/todos-esportes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTelegramRoute = AppTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSeriesRoute = AppSeriesRouteImport.update({
+  id: '/series',
+  path: '/series',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNbaRoute = AppNbaRouteImport.update({
+  id: '/nba',
+  path: '/nba',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLogoRoute = AppLogoRouteImport.update({
+  id: '/logo',
+  path: '/logo',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIndicacaoRoute = AppIndicacaoRouteImport.update({
+  id: '/indicacao',
+  path: '/indicacao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGuiaFutebolRoute = AppGuiaFutebolRouteImport.update({
+  id: '/guia-futebol',
+  path: '/guia-futebol',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFutebolRoute = AppFutebolRouteImport.update({
+  id: '/futebol',
+  path: '/futebol',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFilmesRoute = AppFilmesRouteImport.update({
+  id: '/filmes',
+  path: '/filmes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppF1Route = AppF1RouteImport.update({
+  id: '/f1',
+  path: '/f1',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpressRoute = AppExpressRouteImport.update({
+  id: '/express',
+  path: '/express',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCreditosRoute = AppCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBolaoRoute = AppBolaoRouteImport.update({
+  id: '/bolao',
+  path: '/bolao',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/editor': typeof EditorRoute
+  '/app/bolao': typeof AppBolaoRoute
+  '/app/creditos': typeof AppCreditosRoute
+  '/app/express': typeof AppExpressRoute
+  '/app/f1': typeof AppF1Route
+  '/app/filmes': typeof AppFilmesRoute
+  '/app/futebol': typeof AppFutebolRoute
+  '/app/guia-futebol': typeof AppGuiaFutebolRoute
+  '/app/indicacao': typeof AppIndicacaoRoute
+  '/app/logo': typeof AppLogoRoute
+  '/app/nba': typeof AppNbaRoute
+  '/app/series': typeof AppSeriesRoute
+  '/app/telegram': typeof AppTelegramRoute
+  '/app/todos-esportes': typeof AppTodosEsportesRoute
+  '/app/ufc': typeof AppUfcRoute
+  '/app/video': typeof AppVideoRoute
+  '/app/video-divulgacao': typeof AppVideoDivulgacaoRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/editor': typeof EditorRoute
+  '/app/bolao': typeof AppBolaoRoute
+  '/app/creditos': typeof AppCreditosRoute
+  '/app/express': typeof AppExpressRoute
+  '/app/f1': typeof AppF1Route
+  '/app/filmes': typeof AppFilmesRoute
+  '/app/futebol': typeof AppFutebolRoute
+  '/app/guia-futebol': typeof AppGuiaFutebolRoute
+  '/app/indicacao': typeof AppIndicacaoRoute
+  '/app/logo': typeof AppLogoRoute
+  '/app/nba': typeof AppNbaRoute
+  '/app/series': typeof AppSeriesRoute
+  '/app/telegram': typeof AppTelegramRoute
+  '/app/todos-esportes': typeof AppTodosEsportesRoute
+  '/app/ufc': typeof AppUfcRoute
+  '/app/video': typeof AppVideoRoute
+  '/app/video-divulgacao': typeof AppVideoDivulgacaoRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
+  '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/editor': typeof EditorRoute
+  '/app/bolao': typeof AppBolaoRoute
+  '/app/creditos': typeof AppCreditosRoute
+  '/app/express': typeof AppExpressRoute
+  '/app/f1': typeof AppF1Route
+  '/app/filmes': typeof AppFilmesRoute
+  '/app/futebol': typeof AppFutebolRoute
+  '/app/guia-futebol': typeof AppGuiaFutebolRoute
+  '/app/indicacao': typeof AppIndicacaoRoute
+  '/app/logo': typeof AppLogoRoute
+  '/app/nba': typeof AppNbaRoute
+  '/app/series': typeof AppSeriesRoute
+  '/app/telegram': typeof AppTelegramRoute
+  '/app/todos-esportes': typeof AppTodosEsportesRoute
+  '/app/ufc': typeof AppUfcRoute
+  '/app/video': typeof AppVideoRoute
+  '/app/video-divulgacao': typeof AppVideoDivulgacaoRoute
+  '/app/whatsapp': typeof AppWhatsappRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/editor'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/editor'
+    | '/app/bolao'
+    | '/app/creditos'
+    | '/app/express'
+    | '/app/f1'
+    | '/app/filmes'
+    | '/app/futebol'
+    | '/app/guia-futebol'
+    | '/app/indicacao'
+    | '/app/logo'
+    | '/app/nba'
+    | '/app/series'
+    | '/app/telegram'
+    | '/app/todos-esportes'
+    | '/app/ufc'
+    | '/app/video'
+    | '/app/video-divulgacao'
+    | '/app/whatsapp'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/editor'
-  id: '__root__' | '/' | '/editor'
+  to:
+    | '/'
+    | '/editor'
+    | '/app/bolao'
+    | '/app/creditos'
+    | '/app/express'
+    | '/app/f1'
+    | '/app/filmes'
+    | '/app/futebol'
+    | '/app/guia-futebol'
+    | '/app/indicacao'
+    | '/app/logo'
+    | '/app/nba'
+    | '/app/series'
+    | '/app/telegram'
+    | '/app/todos-esportes'
+    | '/app/ufc'
+    | '/app/video'
+    | '/app/video-divulgacao'
+    | '/app/whatsapp'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/editor'
+    | '/app/bolao'
+    | '/app/creditos'
+    | '/app/express'
+    | '/app/f1'
+    | '/app/filmes'
+    | '/app/futebol'
+    | '/app/guia-futebol'
+    | '/app/indicacao'
+    | '/app/logo'
+    | '/app/nba'
+    | '/app/series'
+    | '/app/telegram'
+    | '/app/todos-esportes'
+    | '/app/ufc'
+    | '/app/video'
+    | '/app/video-divulgacao'
+    | '/app/whatsapp'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   EditorRoute: typeof EditorRoute
 }
 
@@ -58,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,11 +306,182 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/whatsapp': {
+      id: '/app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/app/whatsapp'
+      preLoaderRoute: typeof AppWhatsappRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/video-divulgacao': {
+      id: '/app/video-divulgacao'
+      path: '/video-divulgacao'
+      fullPath: '/app/video-divulgacao'
+      preLoaderRoute: typeof AppVideoDivulgacaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/video': {
+      id: '/app/video'
+      path: '/video'
+      fullPath: '/app/video'
+      preLoaderRoute: typeof AppVideoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ufc': {
+      id: '/app/ufc'
+      path: '/ufc'
+      fullPath: '/app/ufc'
+      preLoaderRoute: typeof AppUfcRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/todos-esportes': {
+      id: '/app/todos-esportes'
+      path: '/todos-esportes'
+      fullPath: '/app/todos-esportes'
+      preLoaderRoute: typeof AppTodosEsportesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/telegram': {
+      id: '/app/telegram'
+      path: '/telegram'
+      fullPath: '/app/telegram'
+      preLoaderRoute: typeof AppTelegramRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/series': {
+      id: '/app/series'
+      path: '/series'
+      fullPath: '/app/series'
+      preLoaderRoute: typeof AppSeriesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/nba': {
+      id: '/app/nba'
+      path: '/nba'
+      fullPath: '/app/nba'
+      preLoaderRoute: typeof AppNbaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/logo': {
+      id: '/app/logo'
+      path: '/logo'
+      fullPath: '/app/logo'
+      preLoaderRoute: typeof AppLogoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/indicacao': {
+      id: '/app/indicacao'
+      path: '/indicacao'
+      fullPath: '/app/indicacao'
+      preLoaderRoute: typeof AppIndicacaoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/guia-futebol': {
+      id: '/app/guia-futebol'
+      path: '/guia-futebol'
+      fullPath: '/app/guia-futebol'
+      preLoaderRoute: typeof AppGuiaFutebolRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/futebol': {
+      id: '/app/futebol'
+      path: '/futebol'
+      fullPath: '/app/futebol'
+      preLoaderRoute: typeof AppFutebolRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/filmes': {
+      id: '/app/filmes'
+      path: '/filmes'
+      fullPath: '/app/filmes'
+      preLoaderRoute: typeof AppFilmesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/f1': {
+      id: '/app/f1'
+      path: '/f1'
+      fullPath: '/app/f1'
+      preLoaderRoute: typeof AppF1RouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/express': {
+      id: '/app/express'
+      path: '/express'
+      fullPath: '/app/express'
+      preLoaderRoute: typeof AppExpressRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/creditos': {
+      id: '/app/creditos'
+      path: '/creditos'
+      fullPath: '/app/creditos'
+      preLoaderRoute: typeof AppCreditosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/bolao': {
+      id: '/app/bolao'
+      path: '/bolao'
+      fullPath: '/app/bolao'
+      preLoaderRoute: typeof AppBolaoRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppBolaoRoute: typeof AppBolaoRoute
+  AppCreditosRoute: typeof AppCreditosRoute
+  AppExpressRoute: typeof AppExpressRoute
+  AppF1Route: typeof AppF1Route
+  AppFilmesRoute: typeof AppFilmesRoute
+  AppFutebolRoute: typeof AppFutebolRoute
+  AppGuiaFutebolRoute: typeof AppGuiaFutebolRoute
+  AppIndicacaoRoute: typeof AppIndicacaoRoute
+  AppLogoRoute: typeof AppLogoRoute
+  AppNbaRoute: typeof AppNbaRoute
+  AppSeriesRoute: typeof AppSeriesRoute
+  AppTelegramRoute: typeof AppTelegramRoute
+  AppTodosEsportesRoute: typeof AppTodosEsportesRoute
+  AppUfcRoute: typeof AppUfcRoute
+  AppVideoRoute: typeof AppVideoRoute
+  AppVideoDivulgacaoRoute: typeof AppVideoDivulgacaoRoute
+  AppWhatsappRoute: typeof AppWhatsappRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppBolaoRoute: AppBolaoRoute,
+  AppCreditosRoute: AppCreditosRoute,
+  AppExpressRoute: AppExpressRoute,
+  AppF1Route: AppF1Route,
+  AppFilmesRoute: AppFilmesRoute,
+  AppFutebolRoute: AppFutebolRoute,
+  AppGuiaFutebolRoute: AppGuiaFutebolRoute,
+  AppIndicacaoRoute: AppIndicacaoRoute,
+  AppLogoRoute: AppLogoRoute,
+  AppNbaRoute: AppNbaRoute,
+  AppSeriesRoute: AppSeriesRoute,
+  AppTelegramRoute: AppTelegramRoute,
+  AppTodosEsportesRoute: AppTodosEsportesRoute,
+  AppUfcRoute: AppUfcRoute,
+  AppVideoRoute: AppVideoRoute,
+  AppVideoDivulgacaoRoute: AppVideoDivulgacaoRoute,
+  AppWhatsappRoute: AppWhatsappRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   EditorRoute: EditorRoute,
 }
 export const routeTree = rootRouteImport
