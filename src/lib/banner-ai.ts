@@ -70,7 +70,7 @@ export async function extractContent(rawText: string): Promise<BannerContent> {
   const title = discount ?? guessTitle(text).toUpperCase();
   const subtitle = discount
     ? guessTitle(text)
-    : (urgency ?? firstSentence(text.slice(title.length + 1)) || "Uma oferta imperdível");
+    : (urgency ?? (firstSentence(text.slice(title.length + 1)) || "Uma oferta imperdível"));
 
   return {
     title: title.slice(0, 60),
