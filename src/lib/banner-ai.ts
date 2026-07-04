@@ -1,89 +1,110 @@
-// "IA" mockada — extrai título, subtítulo, CTA e cupom de um texto bruto.
-// Usa heurísticas: percentuais viram desconto, palavras com CAPS+NUM viram cupom,
-// datas viram urgência, primeira frase vira título.
-import type { BannerContent } from "./banner-types";
+// "IA" mockada — preenche o BannerContent a partir de texto bruto, dependendo do tipo
+// (partida de futebol/basquete, luta, filme, série, vídeo).
+import type { BannerContent, BannerKind } from "./banner-types";
+import { logoFor } from "./banner-images";
 
-const CTA_HINTS = [
-  { re: /aproveit\w+/i, cta: "Aproveite agora" },
-  { re: /compr\w+/i, cta: "Compre já" },
-  { re: /reserv\w+/i, cta: "Reserve agora" },
-  { re: /inscre\w+/i, cta: "Inscreva-se" },
-  { re: /baix\w+/i, cta: "Baixe grátis" },
-  { re: /confir\w+/i, cta: "Confira" },
-];
-
-function pickCta(text: string): string {
-  for (const h of CTA_HINTS) if (h.re.test(text)) return h.cta;
-  if (/desconto|promo|off|%/i.test(text)) return "Garanta o desconto";
-  return "Saiba mais";
+function firstLine(t: string): string {
+  return t.split(/\n/)[0].trim();
 }
 
-function extractDiscount(text: string): string | null {
-  const m = text.match(/(\d{1,3})\s?%/);
-  if (!m) return null;
-  return `${m[1]}% OFF`;
+function match(re: RegExp, text: string): string | undefined {
+  const m = text.match(re);
+  return m ? m[1].trim() : undefined;
 }
 
-function extractCoupon(text: string): string | null {
-  const m = text.match(/cupom[:\s]+([A-Z0-9]{3,20})/i);
-  if (m) return m[1].toUpperCase();
-  // fallback: standalone CAPS+digits token
-  const m2 = text.match(/\b([A-Z]{2,}\d{1,4}|[A-Z]{3,}\d{2,})\b/);
-  return m2 ? m2[1] : null;
+function parseMatchup(text: string): { a?: string; b?: string } {
+  // aceita "Flamengo x Palmeiras", "Flamengo vs Palmeiras", "Flamengo X Palmeiras"
+  const m = text.match(/([\wÀ-ÿ .'-]{2,30})\s*(?:x|vs|×)\s*([\wÀ-ÿ .'-]{2,30})/i);
+  if (!m) return {};
+  return { a: m[1].trim(), b: m[2].trim() };
 }
 
-function extractUrgency(text: string): string | null {
-  if (/hoje|24h|apenas hoje|últim\w+ hor\w+/i.test(text)) return "Só hoje!";
-  if (/amanhã/i.test(text)) return "Válido até amanhã";
-  if (/fim de semana|weekend/i.test(text)) return "Fim de semana";
-  if (/válid\w+ até\s+([^\.,\n]+)/i.test(text)) {
-    const m = text.match(/válid\w+ até\s+([^\.,\n]+)/i);
-    return m ? `Válido até ${m[1].trim()}` : null;
-  }
-  return null;
+function parseDate(text: string): string | undefined {
+  const m = text.match(/(\d{1,2}[\/\-\.]\d{1,2}(?:[\/\-\.]\d{2,4})?)/);
+  if (m) return m[1];
+  const m2 = text.match(/(hoje|amanhã|s[aá]bado|domingo|sexta|quinta|quarta|ter[çc]a|segunda)/i);
+  return m2 ? m2[1] : undefined;
+}
+function parseTime(text: string): string | undefined {
+  const m = text.match(/(\d{1,2}[h:]\d{0,2})/i);
+  return m ? m[1].replace(":", "h") : undefined;
 }
 
-function firstSentence(text: string): string {
-  const s = text.split(/[\.\n!?;]/)[0].trim();
-  return s || text.slice(0, 60);
+async function fakeLatency() {
+  await new Promise((r) => setTimeout(r, 700 + Math.random() * 600));
 }
 
-function guessTitle(text: string): string {
-  const s = firstSentence(text);
-  // pega até 6 primeiras palavras significativas
-  const words = s.split(/\s+/).slice(0, 8).join(" ");
-  return words.replace(/,$/, "");
-}
-
-export async function extractContent(rawText: string): Promise<BannerContent> {
-  // simula latência da IA pra sentir a experiência
-  await new Promise((r) => setTimeout(r, 900 + Math.random() * 700));
-
+export async function extractContent(kind: BannerKind, rawText: string): Promise<BannerContent> {
+  await fakeLatency();
   const text = rawText.trim();
-  if (!text) return { title: "Seu título aqui", subtitle: "Cole um texto e clique em gerar", cta: "Saiba mais" };
 
-  const discount = extractDiscount(text);
-  const coupon = extractCoupon(text);
-  const urgency = extractUrgency(text);
-  const cta = pickCta(text);
+  if (kind === "match" || kind === "fight") {
+    const { a, b } = parseMatchup(text);
+    const team1 = a ?? "Time A";
+    const team2 = b ?? "Time B";
+    return {
+      kind,
+      team1, team2,
+      logo1: logoFor(team1),
+      logo2: logoFor(team2),
+      date: parseDate(text) ?? "Sábado",
+      time: parseTime(text) ?? "20h30",
+      venue: match(/(?:no|em|arena|estádio|gin[áa]sio)\s+([^\.,\n]{2,40})/i, text) ?? undefined,
+      championship: match(/(?:campeonato|liga|copa|torneio|ufc|nba|libertadores|brasileir[ãa]o)[:\s]+([^\.,\n]{2,60})/i, text)
+        ?? (/ufc/i.test(text) ? "UFC" : /nba/i.test(text) ? "NBA" : /libertadores/i.test(text) ? "Libertadores" : "Campeonato"),
+      round: match(/(?:rodada|jornada|round|semi|final|oitavas|quartas)[:\s]*([^\.,\n]{1,30})/i, text) ?? undefined,
+    };
+  }
 
-  const title = discount ?? guessTitle(text).toUpperCase();
-  const subtitle = discount
-    ? guessTitle(text)
-    : (urgency ?? (firstSentence(text.slice(title.length + 1)) || "Uma oferta imperdível"));
+  if (kind === "movie") {
+    const title = firstLine(text) || "TÍTULO DO FILME";
+    return {
+      kind,
+      title: title.toUpperCase().slice(0, 40),
+      tagline: match(/tagline[:\s]+([^\n]+)/i, text) ?? (text.split("\n")[1]?.trim() || "Uma história inesquecível"),
+      rating: match(/(\d(?:[\.,]\d)?)\s?\/\s?10/i, text) ?? undefined,
+      genre: match(/g[êe]nero[:\s]+([^\.,\n]+)/i, text) ?? match(/(a[çc][ãa]o|drama|com[eé]dia|terror|suspense|fic[çc][ãa]o|romance|documentário)/i, text) ?? "Drama",
+      duration: match(/(\d{1,3}\s?min)/i, text) ?? undefined,
+      cta: "Assista agora",
+    };
+  }
 
+  if (kind === "series") {
+    const title = firstLine(text) || "SÉRIE";
+    return {
+      kind,
+      title: title.toUpperCase().slice(0, 40),
+      season: match(/temporada\s*(\d+)/i, text) ?? match(/s(\d{1,2})/i, text) ?? "1",
+      episode: match(/epis[óo]dio\s*(\d+)/i, text) ?? match(/e(\d{1,2})/i, text) ?? "01",
+      tagline: text.split("\n")[1]?.trim() || "Novos episódios",
+      genre: match(/(drama|com[eé]dia|thriller|sci-?fi|fantasia|crime|reality)/i, text) ?? "Drama",
+      cta: "Maratona já",
+    };
+  }
+
+  // video (thumb tipo YouTube)
+  const title = firstLine(text) || "TÍTULO DO VÍDEO";
   return {
-    title: title.slice(0, 60),
-    subtitle: subtitle.slice(0, 90),
-    cta,
-    coupon: coupon ?? undefined,
-    body: urgency ?? undefined,
+    kind: "video",
+    title: title.toUpperCase().slice(0, 60),
+    subtitle: text.split("\n")[1]?.trim() ?? "Assista até o final",
+    channel: match(/canal[:\s]+([^\.,\n]+)/i, text) ?? undefined,
+    duration: match(/(\d{1,2}:\d{2})/i, text) ?? undefined,
   };
 }
 
-// modelos "de IA" — apenas cosmético pra sensação de escolha
+// modelos "de IA" — cosméticos
 export const AI_MODELS = [
-  { id: "forge-fast", name: "Forge Fast", desc: "Rápido e conciso" },
-  { id: "forge-creative", name: "Forge Creative", desc: "Mais criativo e ousado" },
-  { id: "forge-pro", name: "Forge Pro", desc: "Máxima qualidade editorial" },
+  { id: "forge-fast", name: "Forge Fast", desc: "Rápido, ideal pra iterar" },
+  { id: "forge-sport", name: "Forge Sport", desc: "Otimizado pra esportes ao vivo" },
+  { id: "forge-cinema", name: "Forge Cinema", desc: "Filmes e séries, foco editorial" },
+  { id: "forge-pro", name: "Forge Pro", desc: "Máxima qualidade" },
+];
+
+export const KINDS: { id: BannerKind; label: string; icon: string; hint: string }[] = [
+  { id: "match", label: "Partida", icon: "⚽", hint: "Ex: Flamengo x Palmeiras, sábado 21h, Maracanã, Brasileirão rodada 15" },
+  { id: "fight", label: "Luta", icon: "🥊", hint: "Ex: Poatan vs Alex, UFC 305, sábado 23h, T-Mobile Arena, main event" },
+  { id: "movie", label: "Filme", icon: "🎬", hint: "Ex: Duna 3\nUma nova era começa\nGênero: ficção, 155 min, 9/10" },
+  { id: "series", label: "Série", icon: "📺", hint: "Ex: Stranger Things\nTemporada 5, Episódio 01\nGênero: sci-fi" },
+  { id: "video", label: "Vídeo", icon: "▶️", hint: "Ex: TESTEI 10 CHUTEIRAS DE R$2000\nCanal: BolaCheia, 12:45" },
 ];
