@@ -4,7 +4,7 @@ import { RightSidebar } from "@/components/banner/right-sidebar";
 import { TopBar } from "@/components/banner/top-bar";
 import { Canvas } from "@/components/banner/canvas";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/editor")({
   component: EditorPage,
 });
 
