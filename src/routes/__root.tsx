@@ -12,7 +12,6 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AppSidebar } from "@/components/app-sidebar";
 
 function NotFoundComponent() {
   return (
@@ -20,10 +19,9 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Página não encontrada</h2>
-        <p className="mt-2 text-sm text-muted-foreground">O caminho solicitado não existe.</p>
         <div className="mt-6">
           <Link to="/" className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            Voltar ao Dashboard
+            Voltar ao Editor
           </Link>
         </div>
       </div>
@@ -34,24 +32,18 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
+  useEffect(() => { reportLovableError(error, { boundary: "tanstack_root_error_component" }); }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Algo deu errado</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Tente novamente ou volte ao dashboard.</p>
-        <div className="mt-6 flex justify-center gap-2">
-          <button
-            onClick={() => { router.invalidate(); reset(); }}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Tentar de novo
-          </button>
-          <a href="/" className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent">Dashboard</a>
-        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={() => { router.invalidate(); reset(); }}
+          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Tentar de novo
+        </button>
       </div>
     </div>
   );
@@ -62,17 +54,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "M3U Sync — Painel de Controle" },
-      { name: "description", content: "Painel de gerenciamento e automação de downloads de mídia baseado em listas M3U." },
-      { name: "author", content: "M3U Sync" },
-      { property: "og:title", content: "M3U Sync — Painel de Controle" },
-      { property: "og:description", content: "Gerencie downloads e sincronize mídias de listas M3U." },
+      { title: "BannerForge — Gerador de Banners Pro com IA" },
+      { name: "description", content: "Gere banners profissionais com inteligência artificial. Cole seu conteúdo, escolha um template e exporte em segundos." },
+      { property: "og:title", content: "BannerForge — Gerador de Banners Pro com IA" },
+      { property: "og:description", content: "Crie banners incríveis em segundos com IA integrada e biblioteca de templates." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Bebas+Neue&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -84,10 +78,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" className="dark">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
+      <head><HeadContent /></head>
+      <body style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
         {children}
         <Scripts />
       </body>
@@ -99,12 +91,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <Outlet />
-        </div>
-      </div>
+      <Outlet />
       <Toaster theme="dark" position="top-right" richColors />
     </QueryClientProvider>
   );
