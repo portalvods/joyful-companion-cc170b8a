@@ -10,7 +10,7 @@ export type BannerElement = {
   rotation?: number;
   // text
   text?: string;
-  role?: "title" | "subtitle" | "cta" | "coupon" | "body";
+  role?: "title" | "subtitle" | "cta" | "coupon" | "body" | "vs" | "team" | "meta" | "tag";
   fontFamily?: string;
   fontSize?: number; // px
   fontWeight?: number;
@@ -29,7 +29,7 @@ export type BannerFormat = {
   label: string;
   w: number;
   h: number;
-  category: "social" | "web" | "story";
+  category: "social" | "web" | "story" | "thumb";
 };
 
 export type BannerBackground =
@@ -37,18 +37,44 @@ export type BannerBackground =
   | { type: "gradient"; from: string; to: string; angle: number }
   | { type: "image"; src: string; overlay?: string };
 
+export type BannerKind = "match" | "fight" | "movie" | "series" | "video";
+
+// Conteúdo unificado. Campos opcionais são usados dependendo do "kind".
 export type BannerContent = {
+  kind?: BannerKind;
+  // esportes (match / fight)
+  team1?: string;
+  team2?: string;
+  logo1?: string;
+  logo2?: string;
+  score1?: string;
+  score2?: string;
+  date?: string;
+  time?: string;
+  venue?: string;
+  championship?: string;
+  round?: string;
+  // filme / série / vídeo
   title?: string;
   subtitle?: string;
+  tagline?: string;
+  rating?: string;
+  genre?: string;
+  duration?: string;
+  season?: string;
+  episode?: string;
+  channel?: string;
+  poster?: string;
   cta?: string;
-  coupon?: string;
-  body?: string;
 };
+
+export type TemplateCategory = "futebol" | "luta" | "basquete" | "filme" | "serie" | "video";
 
 export type TemplateDef = {
   id: string;
   name: string;
-  category: "ecommerce" | "social" | "eventos" | "corporativo";
+  category: TemplateCategory;
+  kind: BannerKind;
   format: string; // format id
   thumbColors: [string, string];
   build: (c: BannerContent) => { elements: BannerElement[]; background: BannerBackground };
@@ -57,7 +83,8 @@ export type TemplateDef = {
 export const FORMATS: BannerFormat[] = [
   { id: "square", label: "Quadrado 1080×1080", w: 1080, h: 1080, category: "social" },
   { id: "story", label: "Story 1080×1920", w: 1080, h: 1920, category: "story" },
+  { id: "thumb", label: "Thumb YouTube 1280×720", w: 1280, h: 720, category: "thumb" },
   { id: "web", label: "Banner Web 1200×628", w: 1200, h: 628, category: "web" },
   { id: "landscape", label: "Paisagem 1920×1080", w: 1920, h: 1080, category: "web" },
-  { id: "portrait", label: "Retrato 1080×1350", w: 1080, h: 1350, category: "social" },
+  { id: "portrait", label: "Poster 1080×1350", w: 1080, h: 1350, category: "social" },
 ];
