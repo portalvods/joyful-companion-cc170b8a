@@ -25,9 +25,14 @@ type State = {
 
 const initialTemplate = TEMPLATES[0];
 const initialContent: BannerContent = {
-  title: "SEU TÍTULO AQUI",
-  subtitle: "Cole seu texto e deixe a IA gerar",
-  cta: "Saiba mais",
+  kind: "match",
+  team1: "Flamengo",
+  team2: "Palmeiras",
+  championship: "Brasileirão Série A",
+  round: "Rodada 15",
+  date: "Sábado",
+  time: "21h30",
+  venue: "Maracanã",
 };
 const initialBuild = applyTemplate(initialTemplate, initialContent);
 
