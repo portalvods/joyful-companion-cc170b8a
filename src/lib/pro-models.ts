@@ -35,6 +35,9 @@ export type BannerModel = {
 };
 
 export const MODELS: BannerModel[] = [
+  // Futebol — Novos modelos "auto" (baseados nas artes de referência)
+  { id: "fut-prog", name: "Programação", category: "futebol", layout: "highlight", hasColors: true, aspectRatio: 4 / 5 },
+  { id: "fut-destaques", name: "Destaques", category: "futebol", layout: "list", hasColors: true, aspectRatio: 4 / 5 },
   // Futebol
   { id: "fut-01", name: "Modelo 1", category: "futebol", layout: "list", hasColors: false, aspectRatio: 1 },
   { id: "fut-02", name: "Modelo 2", category: "futebol", layout: "list", hasColors: false, aspectRatio: 1 },
