@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Download, Loader2 } from "lucide-react";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
+const { saveAs } = FileSaver;
 import { useProStore } from "@/lib/pro-store";
 import { getModelsByCategory, COLOR_VARIANTS, type Category, type Game, getColor } from "@/lib/pro-models";
 import { renderBanner, canvasToBlob } from "@/lib/pro-render";
